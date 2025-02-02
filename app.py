@@ -6,7 +6,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS
 
 # Load the marks data
-with open('marks.json', 'r') as file:
+with open('q-vercel-python(3).json', 'r') as file:
     marks_data = json.load(file)
 
 @app.route('/api', methods=['GET'])
