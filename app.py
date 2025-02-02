@@ -1,29 +1,38 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 import json
+from http.server import BaseHTTPRequestHandler
+import urllib.parse
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS
+# Load student data from the JSON file
+def load_data():
+    with open('q-vercel-python.json(3)', 'r') as file:
+        data = json.load(file)
+    return data
 
-# Load the marks data
-with open('q-vercel-python(3).json', 'r') as file:
-    marks_data = json.load(file)
+# Handler class to process incoming requests
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        # Parse the query parameters
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
 
-@app.route('/api', methods=['GET'])
-def get_marks():
-    # Get the names from query params
-    names = request.args.getlist('name')
-    
-    # Find the marks for each name in the same order
-    response_marks = []
-    for name in names:
-        student = next((student for student in marks_data["students"] if student["name"] == name), None)
-        if student:
-            response_marks.append(student["marks"])
-        else:
-            response_marks.append(None)  # If student not found, append None
-    
-    return jsonify({"marks": response_marks})
+        # Get 'name' parameters from the query string
+        names = query.get('name', [])
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        # Load data from the JSON file
+        data = load_data()
+
+        # Prepare the result dictionary
+        result = {"marks": []}
+        for name in names:
+            # Find the marks for each name
+            for entry in data:
+                if entry["name"] == name:
+                    result["marks"].append(entry["marks"])
+
+        # Send the response header
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')  # Enable CORS for any origin
+        self.end_headers()
+
+        # Send the JSON response
+        self.wfile.write(json.dumps(result).encode('utf-8'))
